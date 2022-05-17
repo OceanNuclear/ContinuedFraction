@@ -3,7 +3,7 @@ For now we'll assume that the numerator = 1,
     i.e. we're dealing with simple continued fraction,
     not the generalized version."""
 # import numpy as np
-from math import fsum
+import math
 from decimal import Decimal
 
 def cf_sum(l):
@@ -52,6 +52,32 @@ def format_series(l):
         added_coef_line = coef + " + " + fraction[1]
         return "\n".join([fraction[0].rjust(new_width), added_coef_line, *[line.rjust(new_width) for line in fraction[2:]]])
 
+def series_to_simple_fraction(l):
+    """Turn a series representation of a continued fraction (i.e. a series of ints)
+    into a simple `integer p over integer q` expression.
+    """
+    if isinstance(l[-1], int):
+        new_l = l[:-1]
+        new_l.append( (int(l[-1]), 1) ) # a tuple!
+        return series_to_simple_fraction(new_l)
+    if len(l)==1:
+        old_numin, old_denom = l[0]
+        gcd = math.gcd(old_numin, old_denom)
+        new_numin, new_denom = int(old_numin/gcd), int(old_denom/gcd)
+        frac_width = max(len(str(old_numin)), len(str(old_denom)))
+        return "\n".join([str(new_numin).center(frac_width),
+                          "-"*frac_width,
+                          str(new_denom).center(frac_width)])
+    else:
+        new_l = l[:-2]
+        old_numin, old_denom = l[-1]
+
+        # flip the fraction upside down, and then add.
+        new_numin = l[-2] * old_numin + old_denom
+        new_denom = old_numin
+        new_l.append( (new_numin, new_denom) )
+        return series_to_simple_fraction(new_l)
+
 mode = None
 if __name__=="__main__":
     modes_of_op = ["approximation", "format"]
@@ -74,3 +100,5 @@ if mode=="approximation":
 if mode=="format":
     series = input("Please input the series: ").strip("[]()").replace(',', ' ').split()
     print(format_series(series))
+    print("Result =")
+    print(series_to_simple_fraction([int(i) for i in series]))
